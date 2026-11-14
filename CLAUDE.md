@@ -19,7 +19,7 @@ dotnet build -c Release
 dotnet run
 ```
 
-The project must build with 0 warnings. Configuration is environment variables only (`JARVIS_PROVIDER`, `JARVIS_MODEL`, `OPENAI_API_KEY`, `JARVIS_ENDPOINT`); see `README.md`.
+The project must build with 0 warnings. Configuration is environment variables only (`<PROVIDER>_API_KEY`, `<PROVIDER>_MODEL`, `JARVIS_PROVIDER`, `OLLAMA_URL`); see `README.md` section 3. The default AI is the free Groq API; the user's key is in the user-level `GROQ_API_KEY` variable. To test, load it into the process (`[Environment]::GetEnvironmentVariable('GROQ_API_KEY','User')`) and never print it.
 
 ## Engineering rules
 

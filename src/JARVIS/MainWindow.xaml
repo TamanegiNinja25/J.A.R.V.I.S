@@ -80,7 +80,7 @@
             <TextBlock Text="STORAGE (SYSTEM DRIVE)" Style="{StaticResource Label}"/>
             <TextBlock x:Name="DiskValue" Style="{StaticResource Value}"/>
             <TextBlock Text="AI MODE" Style="{StaticResource Label}"/>
-            <TextBlock x:Name="AiModeValue" Foreground="#9BEFFF" Margin="0,3,0,0"/>
+            <TextBlock x:Name="AiModeValue" Foreground="#9BEFFF" Margin="0,3,0,0" TextWrapping="Wrap"/>
           </StackPanel>
         </Border>
       </StackPanel>

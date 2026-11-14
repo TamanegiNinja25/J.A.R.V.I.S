@@ -56,6 +56,15 @@ public partial class MainWindow : Window
         AddMessage("JARVIS", error is null
             ? "Good day. Systems are online."
             : $"Good day. Local commands are available, but AI is offline: {error} See README, section 3.");
+        if (error is null && _ai.Problems.Count > 0)
+            AddMessage("SYSTEM", "Skipped AI providers: " + string.Join(" ", _ai.Problems));
+    }
+
+    private async Task<string> AskAiAsync(string prompt, IReadOnlyList<ChatLine> history)
+    {
+        var reply = await _ai.AskAsync(prompt, history);
+        AiModeValue.Text = $"{_ai.Mode}\nLast answer: {reply.Provider.ToUpperInvariant()}";
+        return reply.Text;
     }
 
     private void UpdateTelemetry()
@@ -86,7 +95,7 @@ public partial class MainWindow : Window
             // Read history before saving the prompt so the prompt is not sent twice.
             var history = await _memory.GetRecentAsync(HistoryTurns);
             await _memory.SaveAsync("user", prompt);
-            var reply = WindowsCommandRouter.TryExecute(prompt) ?? await _ai.AskAsync(prompt, history);
+            var reply = WindowsCommandRouter.TryExecute(prompt) ?? await AskAiAsync(prompt, history);
             await _memory.SaveAsync("assistant", reply);
             AddMessage("JARVIS", reply);
             _speaker.SpeakAsyncCancelAll();

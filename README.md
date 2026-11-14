@@ -1,6 +1,6 @@
 # J.A.R.V.I.S.
 
-Just A Rather Very Intelligent System: a Windows desktop AI assistant with a holographic HUD, chat, voice input/output, SQLite memory, live system telemetry and an allowlisted command router. AI runs on a local Ollama model or the OpenAI API.
+Just A Rather Very Intelligent System: a Windows desktop AI assistant with a holographic HUD, chat, voice input/output, SQLite memory, live system telemetry and an allowlisted command router. AI runs on the free Groq API by default, with optional fallbacks (Gemini, OpenRouter, OpenAI, local Ollama).
 
 This is **Phase 1** of the [roadmap](wiki/roadmap.md). Project knowledge lives in [`wiki/`](wiki/index.md).
 
@@ -33,37 +33,54 @@ This is **Phase 1** of the [roadmap](wiki/roadmap.md). Project knowledge lives i
 
 ## 3. Configure the AI provider
 
-Pick **one** option. Environment variables set with `$env:` last only for that PowerShell window; `setx` makes them permanent (open a new window afterwards).
+JARVIS tries every provider that has a key, in this order: **Groq → Gemini → OpenRouter → OpenAI**. If one fails or hits its daily limit, the next one answers. With no keys set, it uses a local Ollama model. The **AI MODE** panel shows the chain and which provider gave the last answer.
 
-### Option A: OpenAI (recommended for 8 GB RAM)
+| Provider | Cost | Key variable | Model variable (default) |
+|---|---|---|---|
+| Groq | Free plan: 1,000 requests/day | `GROQ_API_KEY` | `GROQ_MODEL` (`openai/gpt-oss-120b`) |
+| Gemini | Free tier; **prompts may be used by Google and read by reviewers** | `GEMINI_API_KEY` | `GEMINI_MODEL` (required) |
+| OpenRouter | `:free` models: 50 requests/day | `OPENROUTER_API_KEY` | `OPENROUTER_MODEL` (required) |
+| OpenAI | Paid | `OPENAI_API_KEY` | `OPENAI_MODEL` (required) |
+| Ollama | Free, local | — | `OLLAMA_MODEL` (`qwen2.5:1.5b`) |
 
-1. Sign in at https://platform.openai.com, open **API keys**, click **Create new secret key**, and copy it. API usage is billed separately from a ChatGPT subscription.
-2. Open https://platform.openai.com/docs/models and copy the ID of a model your account can use.
-3. In PowerShell, run each line, replacing the placeholders. Do not share the key or commit it:
+`JARVIS_PROVIDER` overrides the order, e.g. `groq,ollama`. `OLLAMA_URL` overrides the Ollama address. Variables set with `setx` apply to **new** PowerShell windows only.
+
+### Groq (free, recommended)
+
+1. Go to https://console.groq.com, sign in, open **API Keys**, click **Create API Key**, and copy the key.
+2. In PowerShell (don't share or commit the key):
    ```powershell
-   setx OPENAI_API_KEY "paste-your-key-here"
-   setx JARVIS_PROVIDER "openai"
-   setx JARVIS_MODEL "paste-model-id-here"
+   setx GROQ_API_KEY "paste-your-key-here"
    ```
-4. Close PowerShell, open a new window, go to `src\JARVIS`, and run `dotnet run`.
-5. Check: the top-right shows **AI CONFIGURED** (green), and asking "Hello" gets a reply.
+3. Open a **new** PowerShell window, go to `src\JARVIS`, and run `dotnet run`.
+4. Check: the top-right shows **AI CONFIGURED** (green), AI MODE shows `GROQ (openai/gpt-oss-120b)`, and "Hello" gets a reply.
 
-### Option B: Ollama (local, offline)
+### Optional fallback: Gemini (free)
+
+1. Go to https://aistudio.google.com, click **Get API key** → **Create API key**, and copy it.
+2. In AI Studio, open the model list and copy the ID of a **Flash** model available on the free tier.
+3. In PowerShell:
+   ```powershell
+   setx GEMINI_API_KEY "paste-your-key-here"
+   setx GEMINI_MODEL "paste-model-id-here"
+   ```
+4. Open a new window and run `dotnet run`. AI MODE should now end with `→ GEMINI (...)`.
+
+Don't use the Gemini free tier for private content; Google's terms say free-tier input may be used to improve its products.
+
+### Optional: local Ollama (offline)
 
 1. Install Ollama from https://ollama.com/download/windows.
-2. In PowerShell, download a small model (about 1 GB):
+2. Download a small model (about 1 GB):
    ```powershell
    ollama pull qwen2.5:1.5b
    ```
-3. Set the provider. Ollama is the default, so this is only needed if you set OpenAI before:
+3. To use it as the last fallback, set the order explicitly, then open a new window and run `dotnet run`:
    ```powershell
-   setx JARVIS_PROVIDER "ollama"
-   setx JARVIS_MODEL "qwen2.5:1.5b"
+   setx JARVIS_PROVIDER "groq,ollama"
    ```
-4. Open a new PowerShell window and run `dotnet run` in `src\JARVIS`.
-5. Check: asking "Hello" gets a reply. If you see a connection error, start the Ollama app and try again.
 
-Close memory-heavy apps when using a local model on 8 GB RAM. `JARVIS_ENDPOINT` overrides the Ollama URL (default `http://localhost:11434/api/chat`).
+On 8 GB RAM, close memory-heavy apps while a local model runs.
 
 ## 4. Use it
 
@@ -80,7 +97,7 @@ Close memory-heavy apps when using a local model on 8 GB RAM. `JARVIS_ENDPOINT` 
 |---|---|
 | `src/JARVIS/MainWindow.xaml(.cs)` | HUD layout, chat flow, voice |
 | `src/JARVIS/App.xaml` | Theme colours and styles |
-| `src/JARVIS/AiService.cs` | OpenAI Responses API and Ollama chat clients |
+| `src/JARVIS/AiService.cs` | One OpenAI-compatible client with provider fallback |
 | `src/JARVIS/MemoryStore.cs` | SQLite conversation history |
 | `src/JARVIS/WindowsCommandRouter.cs` | Allowlisted local commands |
 | `src/JARVIS/SystemTelemetry.cs` | CPU, RAM and disk readings (Win32) |

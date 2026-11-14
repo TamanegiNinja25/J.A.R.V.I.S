@@ -14,3 +14,9 @@ Append-only record of knowledge-base ingests and significant project changes. Ne
   - Replaced `PerformanceCounter` and `Microsoft.VisualBasic.ComputerInfo` with Win32 `GetSystemTimes` / `GlobalMemoryStatusEx`, which are locale-independent and need no extra package.
   - Rotating ring now has a dash pattern, so the rotation is visible. Chat auto-scrolls. Speech recognition uses the Windows default language and ignores audio while JARVIS speaks. Commands tolerate trailing punctuation and "launch …".
   - Removed the welcome text that referred to a nonexistent `appsettings.json`. Merged `ROADMAP.md` into `wiki/roadmap.md`.
+
+## 2026-11-14: Free AI provider chain
+
+- Researched free LLM APIs and checked each against official pages: [Groq rate limits](https://console.groq.com/docs/rate-limits), [Groq data](https://console.groq.com/docs/your-data), [Gemini rate limits](https://aistudio.google.com/docs/rate-limits), [Gemini terms](https://aistudio.google.com/docs/terms), [OpenRouter limits](https://openrouter.ai/docs/api-reference/limits). Results are in `architecture.md` → AI providers.
+- Replaced the separate OpenAI Responses and Ollama clients with one OpenAI-compatible Chat Completions client and an ordered fallback chain (Groq → Gemini → OpenRouter → OpenAI, else Ollama). `JARVIS_MODEL` / `JARVIS_ENDPOINT` became `<PROVIDER>_MODEL` / `OLLAMA_URL`.
+- Verified with the user's Groq key: a live reply from `openai/gpt-oss-120b` with history carried over, and a fallback run (Ollama unreachable → Gemini skipped for no key → Groq answered). App launches; build has 0 warnings.

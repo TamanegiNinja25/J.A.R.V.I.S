@@ -4,8 +4,8 @@ The eight build phases, in order. A phase is done when its deliverables build, r
 
 | # | Phase | Deliverables | Status |
 |---|---|---|---|
-| 1 | Desktop foundation | WPF HUD, chat, SQLite history, Ollama/OpenAI provider, push-to-talk dictation, Windows TTS, CPU/RAM/disk telemetry, allowlisted commands | ✅ Done 2026-11-14 |
-| 2 | Advanced voice | "Hey JARVIS" wake word (openWakeWord) with visible mic indicator; VAD + whisper.cpp STT; Piper or cloud neural TTS with voice selection; barge-in interruption; listening/speaking HUD states | ⏭ Next |
+| 1 | Desktop foundation | WPF HUD, chat, SQLite history, free AI provider chain (Groq → Gemini → OpenRouter → OpenAI / Ollama), push-to-talk dictation, Windows TTS, CPU/RAM/disk telemetry, allowlisted commands | ✅ Done 2026-11-14 |
+| 2 | Advanced voice | "Hey JARVIS" wake word (openWakeWord) with visible mic indicator; VAD + STT (whisper.cpp locally, or Groq's free `whisper-large-v3`); Piper or cloud neural TTS with voice selection; barge-in interruption; listening/speaking HUD states | ⏭ Next |
 | 3 | AI agent | Structured tool calling; typed tool registry with JSON schemas; permission broker + confirmation UI; task state machine (plan → authorize → execute → verify → report); audit log of every tool call | |
 | 4 | Windows intelligence | Windows UI Automation; app-specific adapters; process management; file operations limited to user-approved folders | |
 | 5 | Computer vision | User-initiated screen capture; OCR and window metadata; cloud image understanding only after explicit consent; redaction of passwords/tokens/sensitive windows | |

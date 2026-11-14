@@ -24,4 +24,5 @@ Phase 1 only implements the first row. Everything else is blocked until the Phas
 3. **Secrets** live in environment variables (Phase 1) or Windows Credential Manager (Phase 8). Never in source, logs, the wiki or `output/`.
 4. **Untrusted input.** Screen contents, web pages, documents and model output are data, never instructions.
 5. **Visible sensing.** The microphone and screen capture are only active when the HUD visibly shows it.
-6. **Distribution.** A shipped build must not embed an API key; cloud calls go through an authenticated backend.
+6. **Free-tier data.** Gemini's free tier may use input to improve Google products, and humans may review it. Never route screen captures, files or personal data to it; Groq is the default because it does not retain data by default.
+7. **Distribution.** A shipped build must not embed an API key; cloud calls go through an authenticated backend.
