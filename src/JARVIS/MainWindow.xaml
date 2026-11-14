@@ -1,0 +1,92 @@
+<Window x:Class="Jarvis.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="J.A.R.V.I.S." Height="820" Width="1320" MinHeight="650" MinWidth="980"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BackgroundBrush}" Foreground="{StaticResource TextBrush}">
+  <Grid Margin="22">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+
+    <!-- Title bar -->
+    <DockPanel Margin="0,0,0,18">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+        <Ellipse x:Name="StatusLed" Width="9" Height="9" Fill="Goldenrod" Margin="0,0,8,0"/>
+        <TextBlock x:Name="ConnectionStatus" Text="INITIALIZING" Style="{StaticResource Label}" FontSize="12"/>
+      </StackPanel>
+      <StackPanel>
+        <TextBlock Text="J.A.R.V.I.S." FontSize="30" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"/>
+        <TextBlock Text="JUST A RATHER VERY INTELLIGENT SYSTEM" Style="{StaticResource Label}"/>
+      </StackPanel>
+    </DockPanel>
+
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="2.1*"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+
+      <!-- Conversation -->
+      <Border Style="{StaticResource Panel}" Margin="0,0,14,0">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="NEURAL INTERFACE" Style="{StaticResource Header}"/>
+          <DockPanel DockPanel.Dock="Bottom">
+            <Button x:Name="ListenButton" DockPanel.Dock="Right" Content="◉ LISTEN" Click="ListenButton_Click"/>
+            <Button x:Name="SendButton" DockPanel.Dock="Right" Content="TRANSMIT" Click="SendButton_Click"/>
+            <TextBox x:Name="PromptBox" KeyDown="PromptBox_KeyDown"/>
+          </DockPanel>
+          <ScrollViewer x:Name="ConversationScroll" VerticalScrollBarVisibility="Auto" Margin="0,12">
+            <StackPanel x:Name="Conversation"/>
+          </ScrollViewer>
+        </DockPanel>
+      </Border>
+
+      <StackPanel Grid.Column="1">
+        <!-- Core visualizer -->
+        <Border Style="{StaticResource Panel}" Margin="0,0,0,14">
+          <StackPanel>
+            <TextBlock Text="CORE" Style="{StaticResource Header}" HorizontalAlignment="Center"/>
+            <Grid Width="240" Height="240" Margin="0,14">
+              <Ellipse Stroke="#245A73"/>
+              <Ellipse Margin="13" Stroke="{StaticResource AccentBrush}" StrokeThickness="1.5"
+                       StrokeDashArray="40 6" Opacity=".75" RenderTransformOrigin=".5,.5">
+                <Ellipse.RenderTransform>
+                  <RotateTransform x:Name="RingRotation"/>
+                </Ellipse.RenderTransform>
+              </Ellipse>
+              <Ellipse Margin="35" Stroke="#267FA0" StrokeThickness="2" StrokeDashArray="2 5"/>
+              <Ellipse Width="100" Height="100" Fill="#102F43" Stroke="{StaticResource AccentBrush}" StrokeThickness="2">
+                <Ellipse.Effect>
+                  <DropShadowEffect Color="#35CFFF" BlurRadius="28" ShadowDepth="0" Opacity=".8"/>
+                </Ellipse.Effect>
+              </Ellipse>
+              <TextBlock Text="J" FontSize="58" Foreground="#9BEFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+            <TextBlock x:Name="CoreState" Text="STANDBY" Style="{StaticResource Label}" HorizontalAlignment="Center"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Telemetry -->
+        <Border Style="{StaticResource Panel}">
+          <StackPanel>
+            <TextBlock Text="SYSTEM TELEMETRY" Style="{StaticResource Header}" Margin="0,0,0,12"/>
+            <TextBlock Text="PROCESSOR" Style="{StaticResource Label}"/>
+            <TextBlock x:Name="CpuValue" Style="{StaticResource Value}"/>
+            <TextBlock Text="MEMORY" Style="{StaticResource Label}"/>
+            <TextBlock x:Name="RamValue" Style="{StaticResource Value}"/>
+            <TextBlock Text="STORAGE (SYSTEM DRIVE)" Style="{StaticResource Label}"/>
+            <TextBlock x:Name="DiskValue" Style="{StaticResource Value}"/>
+            <TextBlock Text="AI MODE" Style="{StaticResource Label}"/>
+            <TextBlock x:Name="AiModeValue" Foreground="#9BEFFF" Margin="0,3,0,0"/>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </Grid>
+
+    <TextBlock Grid.Row="2" Margin="4,14,0,0" Style="{StaticResource Label}" FontSize="9"
+               Text="JARVIS CORE // LOCAL CONTROL ACTIVE // SENSITIVE ACTIONS REQUIRE APPROVAL"/>
+  </Grid>
+</Window>
