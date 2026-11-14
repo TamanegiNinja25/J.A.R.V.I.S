@@ -1,6 +1,6 @@
 # Architecture
 
-Subsystems, technology choices, hardware constraints and current implementation status. Source: `raw/2026-11-14-chatgpt-jarvis-spec.md`.
+Subsystems, technology choices, hardware constraints and how a request flows through the code. Source: `raw/2026-11-14-chatgpt-jarvis-spec.md`. Feature-level status is in [capabilities.md](capabilities.md).
 
 ## Selected configuration
 
@@ -11,49 +11,66 @@ Capability **complete** · Intelligence **hybrid** · Interface **holographic HU
 Ryzen 9 5900X · 8 GB RAM · 500 GB storage · integrated AMD graphics.
 
 Consequences:
-- AI reasoning is **cloud-first**; local models are optional and small (about 1.5B parameters, `num_ctx` 2048).
-- Only one local inference model at a time.
+- AI reasoning and speech recognition are **cloud-first** on free tiers; local models are optional and small (about 1.5B parameters).
+- Always-on components must be cheap: the voice activity detector is a plain energy threshold, and the wake-word check runs only on detected speech.
 - The HUD uses lightweight WPF vector graphics.
 - Upgrading to 16 GB RAM (32 GB ideal) is advised before heavy local inference.
 
 ## Subsystems
 
-All subsystems are coordinated by the **Orchestrator**: intent detection → tool selection → permission check → execution → verification → report.
+| Subsystem | Technology | Runs | Status | Code |
+|---|---|---|---|---|
+| Holographic HUD | WPF / XAML | Local | ✅ | `MainWindow.xaml` |
+| Voice: capture + VAD | NAudio `WaveIn`, energy VAD with adaptive noise floor | Local | ✅ | `MicrophoneListener.cs` |
+| Voice: wake word | Windows `System.Speech` English recognizer, grammar "hey/okay jarvis" + wildcard | Local | ✅ | `WakeWordDetector.cs` |
+| Voice: speech-to-text | Groq `whisper-large-v3-turbo` | Cloud (free) | ✅ | `SpeechToText.cs` |
+| Voice: text-to-speech | Windows `System.Speech` (en-GB male if installed) | Local | ⚠️ Piper/cloud TTS planned | `MainWindow.xaml.cs` |
+| AI intelligence | OpenAI-compatible chain: Groq 120b → Groq 20b → Gemini → OpenRouter → OpenAI, or Ollama | Cloud first | ✅ | `AiService.cs` |
+| Orchestrator / tools | Chat Completions tool calling, typed tool registry, approval prompt, audit log | Local | ✅ core | `AiService.cs`, `ToolRegistry.cs`, `BuiltInTools.cs` |
+| Persistent memory | SQLite | Local | ⚠️ History + audit only | `MemoryStore.cs` |
+| System monitor | Win32 `GetSystemTimes`, `GlobalMemoryStatusEx` | Local | ⚠️ CPU, RAM, disk | `SystemTelemetry.cs` |
+| Computer vision | Windows Graphics Capture, OCR | Hybrid | ❌ Phase 5 | |
+| Connectivity | Tavily / Wikipedia search; calendar, smart home later | Cloud | ⚠️ Search only | `BuiltInTools.cs` |
 
-| Subsystem | Planned technology | Runs | Phase 1 status |
-|---|---|---|---|
-| Holographic HUD | WPF / XAML vector animation | Local | ✅ `MainWindow.xaml` |
-| Voice: wake word | openWakeWord | Local | ❌ Phase 2 |
-| Voice: speech-to-text | whisper.cpp | Local or cloud | ⚠️ Windows `System.Speech` dictation |
-| Voice: text-to-speech | Piper or cloud neural TTS | Local or cloud | ⚠️ Windows `System.Speech` |
-| AI intelligence | OpenAI-compatible API chain: Groq (free) → Gemini → OpenRouter → OpenAI, or Ollama | Cloud first | ✅ `AiService.cs` (no tool calling yet) |
-| Persistent memory | SQLite + optional vector index | Local | ⚠️ Conversation history only (`MemoryStore.cs`) |
-| Computer vision | Windows Graphics Capture, Windows OCR, vision models | Hybrid | ❌ Phase 5 |
-| System monitor | Win32 APIs, LibreHardwareMonitor | Local | ⚠️ CPU, RAM, disk (`SystemTelemetry.cs`); no GPU/temp/network |
-| Automation | Windows UI Automation, typed tool registry | Local | ⚠️ Allowlisted app launch (`WindowsCommandRouter.cs`) |
-| Connectivity | HTTP / WebSocket, browser, calendar, smart home | Cloud | ❌ Phase 7 |
-| Installer | MSIX | — | ❌ Phase 8 |
+## Request flow
 
-## Phase 1 request flow
+1. **Input.** Typed text, or a voice utterance (see the voice flow below), reaches `MainWindow.SendPromptAsync`.
+2. **History.** The last 10 messages are read from SQLite *before* the prompt is saved, so the prompt is not duplicated.
+3. **Shortcut.** `ToolRegistry.TryRunShortcutAsync` runs exact phrases ("open notepad", "mute") straight through the tool registry, with no AI and no network.
+4. **Agent loop.** Otherwise `AiService.AskAsync` sends the conversation plus tool definitions to the provider chain. If the reply has `tool_calls`, each call goes through `ToolRegistry.RunAsync` (permission → run → audit), the results are appended as `role: tool` messages, and the loop repeats, up to 8 steps, until the model answers in text.
+5. **Fallback.** Each completion tries the endpoints in order; HTTP errors (e.g. 429 daily limit), timeouts and malformed replies fall through to the next one.
+6. **Output.** The reply is saved, displayed and spoken. AI MODE shows which provider and model answered.
 
-1. User types or speaks a prompt (`MainWindow.SendPromptAsync`).
-2. The last 10 messages are read from SQLite *before* the prompt is saved, so the prompt is not duplicated.
-3. `WindowsCommandRouter.TryExecute` handles exact allowlisted phrases locally.
-4. Otherwise `AiService.AskAsync` sends `POST …/chat/completions` (OpenAI format) to each provider in the chain until one succeeds. HTTP errors (e.g. 429 daily limit), timeouts, network errors and malformed replies fall through to the next provider. If all fail, every provider's error is shown.
-5. The reply is saved, displayed and spoken, and AI MODE shows which provider answered. Speech heard while JARVIS is speaking is ignored, to prevent feedback loops.
+## Voice flow
+
+1. `MicrophoneListener` captures 16 kHz mono audio in 30 ms frames. A frame is speech when its RMS is above 3× the adaptive noise floor (minimum 250). An utterance keeps 300 ms of audio before speech starts and ends after 800 ms of silence (bursts under 250 ms are ignored; maximum length 15 s).
+2. **Push-to-talk (◉ LISTEN):** the next utterance goes straight to Whisper, then the mic closes.
+3. **Wake word (HEY JARVIS: ON):** `WakeWordDetector.Detect` checks the utterance offline. If it passes, Whisper transcribes it, and the transcript must also contain the name (`StripWakePhrase`; accepts Jarvis/Jervis/Javis). The rest of the sentence is the command. A bare "Hey JARVIS" gets "Yes?", and the next utterance within 10 s is the command.
+4. Whisper segments with `no_speech_prob ≥ 0.5` are dropped (Whisper invents text such as "Thank you." for noise).
+5. The mic is suppressed while JARVIS speaks.
+
+Verified 2026-11-14 with synthesized speech: both "Hey Jarvis …" phrases were detected and transcribed exactly; "What is the weather like in London today?" and "Open the garage door please." were rejected offline and never sent.
 
 ## AI providers
 
 | Provider | Endpoint | Default model | Free limits (checked 2026-11-14) |
 |---|---|---|---|
-| Groq | `api.groq.com/openai/v1` | `openai/gpt-oss-120b` | 30 RPM, 1K RPD, 8K TPM, 200K TPD; no data retention by default |
+| Groq | `api.groq.com/openai/v1` | `openai/gpt-oss-120b,openai/gpt-oss-20b` | Per model: 30 RPM, 1K RPD, 8K TPM, 200K TPD. Whisper: 20 RPM, 2K RPD. No data retention by default. |
 | Gemini | `generativelanguage.googleapis.com/v1beta/openai` | must be set | Shown only in AI Studio; free-tier input used for product improvement and human review |
 | OpenRouter | `openrouter.ai/api/v1` | must be set | `:free` models: 20 RPM, 50 RPD (1K RPD after a $10 top-up) |
 | OpenAI | `api.openai.com/v1` | must be set | Paid only |
 | Ollama | `localhost:11434/v1` | `qwen2.5:1.5b` | Local |
 
-Only Groq has a default model, because its ID is confirmed on Groq's rate-limit page. The others change often, so the user must set them. Groq also offers free `whisper-large-v3` speech-to-text (20 RPM, 2K RPD), a candidate for Phase 2.
+Only Groq has default models, because those IDs are confirmed on Groq's rate-limit page. The others change often, so the user must set them.
+
+**Rejected:** Groq's built-in `browser_search`. It worked on the free plan, but one query used about 372K tokens (more than a model's 200K daily budget) and returned an outdated answer. Web search uses Tavily (1,000 free searches/month, no card) or Wikipedia's REST API (no key) instead.
 
 ## Configuration
 
-Environment variables only: `<PROVIDER>_API_KEY`, `<PROVIDER>_MODEL`, `JARVIS_PROVIDER` (comma-separated order; default = every provider with a key, in the table order, else Ollama), `OLLAMA_URL`.
+Environment variables only:
+- `<PROVIDER>_API_KEY` and `<PROVIDER>_MODEL` (comma-separated list = one fallback per model)
+- `JARVIS_PROVIDER` (comma-separated order; default = every provider with a key, in the table order, else Ollama)
+- `OLLAMA_URL`
+- `GROQ_STT_MODEL` (default `whisper-large-v3-turbo`)
+- `JARVIS_LANGUAGE` (Whisper language, default `en`)
+- `TAVILY_API_KEY`

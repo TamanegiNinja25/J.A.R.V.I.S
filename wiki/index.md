@@ -4,7 +4,8 @@ Catalog of the J.A.R.V.I.S. knowledge base. Read this first; each page owns one 
 
 | Page | Summary |
 |---|---|
-| [architecture.md](architecture.md) | Subsystems, technology choices, hardware constraints and what Phase 1 implements |
+| [architecture.md](architecture.md) | Subsystems, request and voice flows, AI providers, configuration |
+| [capabilities.md](capabilities.md) | Film-JARVIS feature checklist: what works, what is missing, what is impossible |
 | [roadmap.md](roadmap.md) | The eight build phases with status |
 | [security.md](security.md) | Permission model and non-negotiable safety rules |
 | [log.md](log.md) | Append-only history of ingests and changes |

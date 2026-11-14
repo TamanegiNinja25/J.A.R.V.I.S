@@ -11,6 +11,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.15" />
     <PackageReference Include="System.Speech" Version="10.0.15" />
+    <PackageReference Include="NAudio.WinMM" Version="3.3.0" />
+    <PackageReference Include="NAudio.Wasapi" Version="3.3.0" />
   </ItemGroup>
   <ItemGroup>
     <!-- WPF omits these from implicit usings; this app does not use System.Windows.Shapes.Path. -->

@@ -34,7 +34,10 @@
         <DockPanel>
           <TextBlock DockPanel.Dock="Top" Text="NEURAL INTERFACE" Style="{StaticResource Header}"/>
           <DockPanel DockPanel.Dock="Bottom">
-            <Button x:Name="ListenButton" DockPanel.Dock="Right" Content="◉ LISTEN" Click="ListenButton_Click"/>
+            <Button x:Name="WakeButton" DockPanel.Dock="Right" Content="HEY JARVIS: OFF" Click="WakeButton_Click"
+                    ToolTip="Always listen for &quot;Hey JARVIS&quot;. Audio stays on this PC until the wake phrase is heard."/>
+            <Button x:Name="ListenButton" DockPanel.Dock="Right" Content="◉ LISTEN" Click="ListenButton_Click"
+                    ToolTip="Listen for one command"/>
             <Button x:Name="SendButton" DockPanel.Dock="Right" Content="TRANSMIT" Click="SendButton_Click"/>
             <TextBox x:Name="PromptBox" KeyDown="PromptBox_KeyDown"/>
           </DockPanel>
@@ -66,6 +69,18 @@
               <TextBlock Text="J" FontSize="58" Foreground="#9BEFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Grid>
             <TextBlock x:Name="CoreState" Text="STANDBY" Style="{StaticResource Label}" HorizontalAlignment="Center"/>
+            <!-- Microphone indicator: red light and level bar whenever the mic is open -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+              <Ellipse x:Name="MicLed" Width="8" Height="8" Fill="#33505F" Margin="0,0,6,0"/>
+              <TextBlock Text="MIC" Style="{StaticResource Label}" Margin="0,0,8,0"/>
+              <Border Width="140" Height="6" Background="{StaticResource ControlBrush}" CornerRadius="3">
+                <Border Background="{StaticResource AccentBrush}" CornerRadius="3" HorizontalAlignment="Left" Width="140">
+                  <Border.RenderTransform>
+                    <ScaleTransform x:Name="MicLevel" ScaleX="0"/>
+                  </Border.RenderTransform>
+                </Border>
+              </Border>
+            </StackPanel>
           </StackPanel>
         </Border>
 
